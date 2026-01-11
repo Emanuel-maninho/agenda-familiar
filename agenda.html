@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Familiar</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-export {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-export:hover {
+            background: #138496;
+        }
+
+        .view-selector {
+            display: flex;
+            gap: 10px;
+        }
+
+        .view-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .calendar-container {
+            padding: 0 30px 30px 30px;
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: calc(100vh - 240px);
+        }
+
+        .calendar {
+            min-width: 1200px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .calendar thead th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid #5568d3;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .calendar td {
+            border: 1px solid #dee2e6;
+            padding: 5px;
+            vertical-align: top;
+            min-height: 60px;
+            height: 60px;
+            position: relative;
+            background: white;
+            overflow: visible;
+        }
+
+        .calendar td:hover {
+            background: #f8f9fa;
+        }
+
+        .time-cell {
+            background: #f8f9fa;
+            font-weight: 600;
+            text-align: center;
+            color: #495057;
+            width: 80px;
+            position: sticky;
+            left: 0;
+            z-index: 101;
+        }
+
+        .event {
+            background: #667eea;
+            color: white;
+            padding: 6px 6px;
+            margin: 2px 0;
+            border-radius: 5px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            word-wrap: break-word;
+            position: absolute;
+            overflow: hidden;
+            min-height: 50px;
+            line-height: 1.2;
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        .event:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .event.multi-person {
+            background: #28a745;
+        }
+
+        .event.recurrent {
+            border-left: 4px solid #ffc107;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: auto;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+        }
+
+        .legend {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- CABEÇALHO PRINCIPAL -->
+        <div class="header" id="pdfHeader">
+            <h1>📅 Agenda Familiar</h1>
+            <p>Família: Emanuel, Sue Ellen, Emanuel Jr, Maria Eduarda e André</p>
+        </div>
+
+        <!-- BARRA DE CONTROLES -->
+        <div class="controls" id="pdfControls">
+            <button class="btn btn-primary" onclick="openAddEventModal()">➕ Adicionar Evento</button>
+
+            <button class="btn btn-export" onclick="exportWeekToPDF()">📄 Exportar PDF</button>
+
+            <div class="view-selector">
+                <button class="view-btn active" onclick="changeView('geral', this)">Geral</button>
+                <button class="view-btn" onclick="changeView('Emanuel', this)">Emanuel</button>
+                <button class="view-btn" onclick="changeView('Sue Ellen', this)">Sue Ellen</button>
+                <button class="view-btn" onclick="changeView('Emanuel Jr', this)">Emanuel Jr</button>
+                <button class="view-btn" onclick="changeView('Maria Eduarda', this)">Maria Eduarda</button>
+                <button class="view-btn" onclick="changeView('André', this)">André</button>
+            </div>
+
+            <div class="week-nav">
+                <button class="btn btn-secondary" onclick="changeWeek(-1)">← Semana Anterior</button>
+                <span id="weekDisplay" style="font-weight: 600;"></span>
+                <button class="btn btn-secondary" onclick="changeWeek(1)">Semana Seguinte →</button>
+            </div>
+        </div>
+
+        <!-- ÁREA DA AGENDA -->
+        <div class="calendar-container" id="pdfCalendar">
+            <table class="calendar" id="calendar"></table>
+        </div>
+
+        <!-- LEGENDA -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #667eea;"></div>
+                <span>Evento Individual</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #28a745;"></div>
+                <span>Evento Múltiplas Pessoas</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: white; border: 4px solid #ffc107; border-left-width: 4px;"></div>
+                <span>Evento Recorrente</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE EVENTO -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Adicionar Evento</h2>
+
+            <form id="eventForm">
+
+                <div class="form-group">
+                    <label>Título do Evento</label>
+                    <input type="text" id="eventTitle" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="eventDescription" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="eventDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Horário de Início</label>
+                    <input type="time" id="eventStartTime" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Horário de Término</label>
+                    <input type="time" id="eventEndTime" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Membros da Família</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" value="Emanuel">
+                            <label>Emanuel</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" value="Sue Ellen">
+                            <label>Sue Ellen</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" value="Emanuel Jr">
+                            <label>Emanuel Jr</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" value="Maria Eduarda">
+                            <label>Maria Eduarda</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" value="André">
+                            <label>André</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Recorrência</label>
+                    <select id="eventRecurrence" onchange="toggleRecurrenceEnd()">
+                        <option value="none">Evento Único</option>
+                        <option value="daily">Diariamente</option>
+                        <option value="weekdays">Dias de Trabalho (Seg-Sex)</option>
+                        <option value="weekly">Semanalmente</option>
+                        <option value="monthly">Mensalmente</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="recurrenceEndGroup" style="display: none;">
+                    <label>Repetir até (Data Final)</label>
+                    <input type="date" id="eventRecurrenceEnd">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <button type="button" class="btn btn-delete" id="deleteBtn" style="display:none;" onclick="deleteEvent()">Excluir</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+<script>
+    const familyMembers = ['Emanuel', 'Sue Ellen', 'Emanuel Jr', 'Maria Eduarda', 'André'];
+    const memberColors = {
+    	'Emanuel': '#28a745',       // verde
+    	'Sue Ellen': '#007bff',     // azul
+    	'Emanuel Jr': '#6c757d',    // cinza médio
+    	'Maria Eduarda': '#e83e8c', // rosa forte
+    	'André': '#ffc107'          // amarelo forte
+    };
+    let events = JSON.parse(localStorage.getItem('familyEvents')) || [];
+    let currentView = 'geral';
+    let currentWeekStart = getWeekStart(new Date());
+    let editingEventId = null;
+    let editingEventDate = null;
+
+    function getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day;
+        return new Date(d.setDate(diff));
+    }
+
+    function formatDate(date) {
+        return date.toISOString().split('T')[0];
+    }
+
+    function formatDateBR(date) {
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    function changeWeek(direction) {
+        const newDate = new Date(currentWeekStart);
+        newDate.setDate(newDate.getDate() + (direction * 7));
+        currentWeekStart = newDate;
+        renderCalendar();
+    }
+
+    function changeView(view, btnElement) {
+        currentView = view;
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+        renderCalendar();
+    }
+
+    function openAddEventModal() {
+        editingEventId = null;
+        editingEventDate = null;
+        document.getElementById('modalTitle').textContent = 'Adicionar Evento';
+        document.getElementById('eventForm').reset();
+        document.getElementById('deleteBtn').style.display = 'none';
+        document.getElementById('recurrenceEndGroup').style.display = 'none';
+        document.getElementById('eventModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('eventModal').classList.remove('active');
+    }
+
+    function openEditEventModal(eventId, eventDate) {
+        editingEventId = eventId;
+        editingEventDate = eventDate;
+        const evt = events.find(e => e.id === eventId);
+        if (!evt) return;
+
+        document.getElementById('modalTitle').textContent = 'Editar Evento';
+        document.getElementById('eventTitle').value = evt.title;
+        document.getElementById('eventDescription').value = evt.description || '';
+        document.getElementById('eventDate').value = evt.date;
+        document.getElementById('eventStartTime').value = evt.startTime;
+        document.getElementById('eventEndTime').value = evt.endTime;
+        document.getElementById('eventRecurrence').value = evt.recurrence || 'none';
+        document.getElementById('eventRecurrenceEnd').value = evt.recurrenceEnd || '';
+
+        if (evt.recurrence && evt.recurrence !== 'none') {
+            document.getElementById('recurrenceEndGroup').style.display = 'block';
+        }
+
+        familyMembers.forEach(member => {
+            const checkbox = document.querySelector(`input[value="${member}"]`);
+            checkbox.checked = evt.people.includes(member);
+        });
+
+        document.getElementById('deleteBtn').style.display = 'block';
+        document.getElementById('eventModal').classList.add('active');
+    }
+
+    function deleteEvent() {
+        if (!editingEventId) return;
+
+        const evt = events.find(e => e.id === editingEventId);
+        if (!evt) return;
+
+        const choice = prompt(
+            "Como deseja excluir?\n\n" +
+            "1 - Excluir TODA a série\n" +
+            "2 - Excluir SOMENTE esta ocorrência\n" +
+            "3 - Cancelar"
+        );
+
+        if (choice === "1") {
+            events = events.filter(e => e.id !== editingEventId);
+        }
+        else if (choice === "2") {
+            evt.excludedDates = evt.excludedDates || [];
+            evt.excludedDates.push(editingEventDate);
+        }
+        else {
+            closeModal();
+            return;
+        }
+
+        saveEvents();
+        closeModal();
+        renderCalendar();
+    }
+
+    function saveEvents() {
+        localStorage.setItem('familyEvents', JSON.stringify(events));
+    }
+
+    function generateRecurringEvents(baseEvent, startDate, endDate) {
+        const recurring = [];
+        let current = new Date(baseEvent.date + 'T00:00:00');
+        const end = baseEvent.recurrenceEnd ? new Date(baseEvent.recurrenceEnd + 'T00:00:00') : new Date(endDate);
+
+        const maxEnd = new Date(endDate);
+        const finalEnd = end < maxEnd ? end : maxEnd;
+
+        const excludedDates = baseEvent.excludedDates || [];
+
+        if (baseEvent.recurrence === 'weekdays') {
+            let startDay = current.getDay();
+            while (startDay === 0 || startDay === 6) {
+                current.setDate(current.getDate() + 1);
+                startDay = current.getDay();
+            }
+        }
+
+        while (current <= finalEnd) {
+            const currentDateStr = formatDate(current);
+
+            if (current >= new Date(startDate)) {
+                const dayOfWeek = current.getDay();
+
+                if (!excludedDates.includes(currentDateStr)) {
+                    if (baseEvent.recurrence === 'weekdays') {
+                        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                            recurring.push({ ...baseEvent, date: currentDateStr, isRecurring: true });
+                        }
+                    } else {
+                        recurring.push({ ...baseEvent, date: currentDateStr, isRecurring: true });
+                    }
+                }
+            }
+
+            switch (baseEvent.recurrence) {
+                case 'daily': current.setDate(current.getDate() + 1); break;
+                case 'weekdays': current.setDate(current.getDate() + 1); break;
+                case 'weekly': current.setDate(current.getDate() + 7); break;
+                case 'monthly': current.setMonth(current.getMonth() + 1); break;
+                default: return recurring;
+            }
+        }
+
+        return recurring;
+    }
+
+    function getEventsForWeek() {
+        const weekEnd = new Date(currentWeekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+
+        let allEvents = [...events];
+
+        events.forEach(evt => {
+            if (evt.recurrence && evt.recurrence !== 'none') {
+                const recurring = generateRecurringEvents(evt, formatDate(currentWeekStart), formatDate(weekEnd));
+                allEvents = allEvents.concat(recurring.filter(r => r.date !== evt.date));
+            }
+        });
+
+        return allEvents.filter(evt => {
+            const evtDate = new Date(evt.date);
+            return evtDate >= currentWeekStart && evtDate <= weekEnd;
+        });
+    }
+
+    function timeToMinutes(time) {
+        const [h, m] = time.split(':').map(Number);
+        return h * 60 + m;
+    }
+
+    function eventsOverlap(a, b) {
+        const s1 = timeToMinutes(a.startTime);
+        const e1 = timeToMinutes(a.endTime);
+        const s2 = timeToMinutes(b.startTime);
+        const e2 = timeToMinutes(b.endTime);
+        return s1 < e2 && s2 < e1;
+    }
+
+    function buildDayLayout(dayEvents) {
+        const layout = {};
+        if (dayEvents.length === 0) return layout;
+
+        const sorted = [...dayEvents].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+
+        const columns = [];
+
+        sorted.forEach(evt => {
+            const start = timeToMinutes(evt.startTime);
+            const end = timeToMinutes(evt.endTime);
+
+            let placed = false;
+
+            for (let i = 0; i < columns.length; i++) {
+                if (!eventsOverlap(columns[i].event, evt)) {
+                    columns[i] = { event: evt, end };
+                    layout[evt.id] = { colIndex: i };
+                    placed = true;
+                    break;
+                }
+            }
+
+            if (!placed) {
+                const newIndex = columns.length;
+                columns.push({ event: evt, end });
+                layout[evt.id] = { colIndex: newIndex };
+            }
+        });
+
+        const totalCols = columns.length;
+        Object.keys(layout).forEach(id => layout[id].totalCols = totalCols);
+
+        return layout;
+    }
+
+    function renderCalendar() {
+    const calendar = document.getElementById('calendar');
+    const weekEvents = getEventsForWeek();
+
+    const weekEnd = new Date(currentWeekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    document.getElementById('weekDisplay').textContent =
+        `${formatDateBR(currentWeekStart)} - ${formatDateBR(weekEnd)}`;
+
+    let html = '<thead><tr><th>Horário</th>';
+
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const daysArray = [];
+
+    for (let i = 0; i < 7; i++) {
+        const date = new Date(currentWeekStart);
+        date.setDate(date.getDate() + i);
+        const dateStr = formatDate(date);
+        daysArray.push({ date, dateStr });
+        html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
+    }
+
+    html += '</tr></thead><tbody>';
+
+    const layoutsByDay = {};
+    daysArray.forEach(({ dateStr }) => {
+        const dayEvents = weekEvents.filter(evt =>
+            evt.date === dateStr &&
+            (currentView === 'geral' || evt.people.includes(currentView))
+        );
+        layoutsByDay[dateStr] = buildDayLayout(dayEvents);
+    });
+
+    const renderedEvents = new Set();
+
+    for (let hour = 0; hour < 24; hour++) {
+        html += `<tr><td class="time-cell">${hour.toString().padStart(2, '0')}:00</td>`;
+
+        for (let day = 0; day < 7; day++) {
+            const { dateStr } = daysArray[day];
+
+            const cellEvents = weekEvents.filter(evt => {
+                if (evt.date !== dateStr) return false;
+                if (currentView !== 'geral' && !evt.people.includes(currentView)) return false;
+                return parseInt(evt.startTime.split(':')[0]) === hour;
+            });
+
+            html += '<td>';
+
+            const layoutForDay = layoutsByDay[dateStr] || {};
+
+            cellEvents.forEach(evt => {
+                const key = `${evt.id}-${dateStr}`;
+                if (renderedEvents.has(key)) return;
+                renderedEvents.add(key);
+
+                const startH = parseInt(evt.startTime.split(':')[0]);
+                const startM = parseInt(evt.startTime.split(':')[1]);
+                const endH = parseInt(evt.endTime.split(':')[0]);
+                const endM = parseInt(evt.endTime.split(':')[1]);
+
+                const duration = (endH + endM / 60) - (startH + startM / 60);
+                const height = Math.max(duration * 60, 50);
+
+                const info = layoutForDay[evt.id] || { colIndex: 0, totalCols: 1 };
+                const width = 100 / info.totalCols;
+                const left = info.colIndex * width;
+
+                const bgColor = memberColors[evt.people[0]] || '#667eea';
+                const borderColors = evt.people.slice(1).map(p => memberColors[p]).filter(Boolean);
+                const boxShadow = borderColors.map((color, i) => {
+                    const offset = (i + 1) * 2;
+                    return `0 0 0 ${offset}px ${color}`;
+                }).join(', ');
+
+                const classes = `event ${evt.isRecurring ? 'recurrent' : ''}`;
+
+                html += `
+                    <div class="${classes}"
+                         onclick="openEditEventModal('${evt.id}', '${dateStr}')"
+                         style="
+                            height:${height}px;
+                            width:${width}%;
+                            left:${left}%;
+                            top:0;
+                            background:${bgColor};
+                            box-shadow:${boxShadow};
+                         ">
+                        ${evt.isRecurring ? '<span style="position:absolute; top:4px; right:6px; font-size:14px;">🔁</span>' : ''}
+                        <strong>${evt.title}</strong><br>
+                        ${evt.startTime} - ${evt.endTime}<br>
+                        <small>${evt.people.join(', ')}</small>
+                    </div>
+                `;
+            });
+
+            html += '</td>';
+        }
+
+        html += '</tr>';
+    }
+
+    html += '</tbody>';
+    calendar.innerHTML = html;
+
+    // Atualiza legenda
+    const legend = document.querySelector('.legend');
+    legend.innerHTML = `
+        ${Object.entries(memberColors).map(([name, color]) => `
+            <div class="legend-item">
+                <div class="legend-color" style="background: ${color};"></div>
+                <span>${name}</span>
+            </div>
+        `).join('')}
+        <div class="legend-item">
+            <div class="legend-color" style="background: white; border: 2px solid #333;"></div>
+            <span>Evento com múltiplas pessoas (bordas coloridas)</span>
+        </div>
+        <div class="legend-item">
+            <span style="font-size: 16px;">🔁</span>
+            <span>Evento recorrente</span>
+        </div>
+    `;
+}
+
+    function toggleRecurrenceEnd() {
+        const recurrence = document.getElementById('eventRecurrence').value;
+        document.getElementById('recurrenceEndGroup').style.display =
+            recurrence !== 'none' ? 'block' : 'none';
+    }
+
+    document.getElementById('eventForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const selectedPeople = [...document.querySelectorAll('.checkbox-item input:checked')]
+            .map(c => c.value);
+
+        if (selectedPeople.length === 0) {
+            alert('Selecione pelo menos um membro da família!');
+            return;
+        }
+
+        let eventDate = document.getElementById('eventDate').value;
+        const recurrence = document.getElementById('eventRecurrence').value;
+
+        if (recurrence === 'weekdays') {
+            const date = new Date(eventDate + 'T00:00:00');
+            const dow = date.getDay();
+            if (dow === 0) date.setDate(date.getDate() + 1);
+            if (dow === 6) date.setDate(date.getDate() + 2);
+            eventDate = formatDate(date);
+        }
+
+        const eventData = {
+            id: editingEventId || Date.now().toString(),
+            title: document.getElementById('eventTitle').value,
+            description: document.getElementById('eventDescription').value,
+            date: eventDate,
+            startTime: document.getElementById('eventStartTime').value,
+            endTime: document.getElementById('eventEndTime').value,
+            people: selectedPeople,
+            recurrence,
+            recurrenceEnd: document.getElementById('eventRecurrenceEnd').value
+        };
+
+        if (editingEventId) {
+            events = events.map(e => e.id === editingEventId ? eventData : e);
+        } else {
+            events.push(eventData);
+        }
+
+        saveEvents();
+        closeModal();
+        renderCalendar();
+    });
+
+    // ============================
+    // EXPORTAR PDF (estrutura pronta)
+    // ============================
+
+async function exportWeekToPDF() {
+    const { jsPDF } = window.jspdf;
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    const header = document.getElementById('pdfHeader');
+    const controls = document.getElementById('pdfControls');
+    const calendar = document.getElementById('pdfCalendar');
+
+    const headerCanvas = await html2canvas(header);
+    const controlsCanvas = await html2canvas(controls);
+    const calendarCanvas = await html2canvas(calendar);
+
+    const headerImg = headerCanvas.toDataURL('image/png');
+    const controlsImg = controlsCanvas.toDataURL('image/png');
+    const calendarImg = calendarCanvas.toDataURL('image/png');
+
+    const headerHeight = (headerCanvas.height * 190) / headerCanvas.width;
+    const controlsHeight = (controlsCanvas.height * 190) / controlsCanvas.width;
+    const fixedTopHeight = headerHeight + controlsHeight;
+
+    const calendarRatio = 190 / calendarCanvas.width;
+    const calendarHeightMM = calendarCanvas.height * calendarRatio;
+
+    let remainingHeight = calendarHeightMM;
+    let positionY = fixedTopHeight;
+    let sliceY = 0;
+
+    while (remainingHeight > 0) {
+        if (positionY !== fixedTopHeight) pdf.addPage();
+
+        pdf.addImage(headerImg, 'PNG', 10, 10, 190, headerHeight);
+        pdf.addImage(controlsImg, 'PNG', 10, 10 + headerHeight, 190, controlsHeight);
+
+        const sliceHeight = Math.min(pageHeight - fixedTopHeight - 10, remainingHeight);
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = calendarCanvas.width;
+        sliceCanvas.height = (sliceHeight / calendarRatio);
+
+        const ctx = sliceCanvas.getContext('2d');
+        ctx.drawImage(
+            calendarCanvas,
+            0, sliceY,
+            calendarCanvas.width, sliceCanvas.height,
+            0, 0,
+            calendarCanvas.width, sliceCanvas.height
+        );
+
+        const sliceImg = sliceCanvas.toDataURL('image/png');
+        pdf.addImage(sliceImg, 'PNG', 10, positionY, 190, sliceHeight);
+
+        remainingHeight -= sliceHeight;
+        sliceY += sliceCanvas.height;
+    }
+
+    pdf.save('agenda-familiar.pdf');
+}
+
+    renderCalendar();
+</script>
+
+<!-- AQUI você cola as bibliotecas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</body>
+</html>
