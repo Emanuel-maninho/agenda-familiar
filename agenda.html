@@ -209,7 +209,7 @@
         .event.recurrent {
             border-left: 4px solid #f1c40f;
         }
-        
+
         .modal {
             display: none;
             position: fixed;
@@ -471,7 +471,6 @@
 <div class="loading-overlay" id="loadingOverlay" style="display:none;">
     Carregando agenda...
 </div>
-
 <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxMD0OzNc1jpgnqCsP5EfF1PGBija7XnNqGvo1fpJsS5sekKK70iRSGoyOaX_0rRDDH/exec';
 
@@ -566,6 +565,7 @@
         document.getElementById('deleteBtn').style.display = 'block';
         document.getElementById('eventModal').classList.add('active');
     }
+
     async function deleteEvent() {
         if (!editingEventId) return;
 
@@ -858,6 +858,7 @@
             </div>
         `;
     }
+
     function toggleRecurrenceEnd() {
         const recurrence = document.getElementById('eventRecurrence').value;
         document.getElementById('recurrenceEndGroup').style.display =
@@ -913,24 +914,15 @@
             console.error(e);
         }
     }
-
-    async function loadEvents() {
+        async function loadEvents() {
         showLoading(true);
 
         try {
-            const response = await fetch(API_URL + '?nocache=' + new Date().getTime());
-            //teste com o carregamento no celular
-            console.log("Carregando eventos da API...");
-            console.log("URL usada:", API_URL + '?nocache=' + new Date().getTime());
-            async function loadEvents() {
-        showLoading(true);
-
-        try {
-            const response = await fetch(API_URL + '?nocache=' + new Date().getTime());
-
+            console.log("Script carregado!");
             console.log("Carregando eventos da API...");
             console.log("URL usada:", API_URL + '?nocache=' + new Date().getTime());
 
+            const response = await fetch(API_URL + '?nocache=' + new Date().getTime());
             const data = await response.json();
             console.log("Eventos recebidos:", data);
 
@@ -940,7 +932,6 @@
         } catch (e) {
             console.error('Erro ao carregar eventos:', e);
             alert('Erro ao carregar eventos do servidor.');
-
         } finally {
             showLoading(false);
         }
@@ -1001,5 +992,6 @@
 
     loadEvents();
 </script>
+
 </body>
 </html>
