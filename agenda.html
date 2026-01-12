@@ -852,7 +852,7 @@
                             ${evt.isRecurring ? '<span style="position:absolute; top:2px; right:4px; font-size:12px;">🔁</span>' : ''}
                             <strong>${evt.title}</strong><br>
                             ${evt.startTime} - ${evt.endTime}<br>
-                            <small>${evt.join(', ')}</small>
+                            <small>${evt.people.join(', ')}</small>
                         </div>
                     `;
                 });
@@ -1077,6 +1077,7 @@
 
 </body>
 </html>
+
 
 
 
