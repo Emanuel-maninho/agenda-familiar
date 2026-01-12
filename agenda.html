@@ -937,13 +937,16 @@
             renderCalendar();
         }
     }
-
+    
     async function saveEventToServer(evt) {
         const payload = serializeEvent(evt);
         try {
             await fetch(API_URL, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                redirect: 'follow',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'
+                },
                 body: JSON.stringify(payload)
             });
         } catch (e) {
@@ -1074,6 +1077,7 @@
 
 </body>
 </html>
+
 
 
 
