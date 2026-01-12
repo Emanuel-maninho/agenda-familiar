@@ -792,7 +792,7 @@
         daysArray.forEach(({ dateStr }) => {
             const dayEvents = weekEvents.filter(evt =>
                 evt.date === dateStr &&
-                (currentView === 'geral' || evt..includes(currentView))
+                (currentView === 'geral' || evt.includes(currentView))
             );
             layoutsByDay[dateStr] = buildDayLayout(dayEvents);
         });
@@ -1074,6 +1074,7 @@
 
 </body>
 </html>
+
 
 
 
