@@ -777,7 +777,8 @@
                 const cellEvents = weekEvents.filter(evt => {
                     if (evt.date !== dateStr) return false;
                     if (currentView !== 'geral' && !evt.people.includes(currentView)) return false;
-                    return parseInt(evt.startTime.split(':')[0]) === hour;
+                    const evtHour = parseInt(evt.startTime.split(':')[0]);
+                    return evtHour === hour || (evtHour < hour && parseInt(evt.endTime.split(':')[0]) > hour);
                 });
 
                 html += '<td>';
@@ -995,3 +996,4 @@
 
 </body>
 </html>
+
