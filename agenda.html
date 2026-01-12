@@ -807,7 +807,7 @@
 
                 const cellEvents = weekEvents.filter(evt => {
                     if (evt.date !== dateStr) return false;
-                    if (currentView !== 'geral' && !evt..includes(currentView)) return false;
+                    if (currentView !== 'geral' && !evt.includes(currentView)) return false;
                     return parseInt(evt.startTime.split(':')[0]) === hour;
                 });
 
@@ -1074,6 +1074,7 @@
 
 </body>
 </html>
+
 
 
 
