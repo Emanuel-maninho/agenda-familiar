@@ -883,28 +883,32 @@
     }
 
     function deserializeEvent(row) {
-        // Função auxiliar para extrair HH:mm de qualquer formato
+        // Função para extrair HH:mm ignorando timezone
         function parseTimeField(value) {
             if (!value) return "";
             
-            // Se já está no formato HH:mm
+            // Se já está no formato HH:mm correto
             if (typeof value === 'string' && /^\d{2}:\d{2}$/.test(value)) {
                 return value;
             }
             
-            // Se contém 'T' (formato ISO do Sheets)
+            // Se contém 'T' (ISO do Sheets) - IGNORA timezone
             if (typeof value === 'string' && value.includes('T')) {
-                const timePart = value.split('T')[1];
-                return timePart ? timePart.substring(0, 5) : "";
+                // Extrai apenas a parte do horário, ignorando o Z
+                const match = value.match(/T(\d{2}):(\d{2})/);
+                if (match) {
+                    return `${match[1]}:${match[2]}`;
+                }
             }
             
-            // Se é um objeto Date
-            if (value instanceof Date || Object.prototype.toString.call(value) === '[object Date]') {
-                const hours = value.getHours().toString().padStart(2, '0');
-                const minutes = value.getMinutes().toString().padStart(2, '0');
-                return `${hours}:${minutes}`;
+            return "";
+        }
+    
+        function parseDateField(value) {
+            if (!value) return "";
+            if (typeof value === 'string') {
+                return value.split('T')[0];
             }
-            
             return "";
         }
     
@@ -914,11 +918,11 @@
             description: row.description || '',
             startTime: parseTimeField(row.startTime),
             endTime: parseTimeField(row.endTime),
-            date: row.date ? (typeof row.date === 'string' ? row.date.split('T')[0] : new Date(row.date).toISOString().substring(0,10)) : "",
-            people: Array.isArray(row.people) ? row.people : (row.people ? row.people.split(',').map(s => s.trim()) : []),
+            date: parseDateField(row.date),
+            people: typeof row.people === 'string' ? row.people.split(',').map(s => s.trim()).filter(Boolean) : [],
             recurrence: row.recurrence || 'none',
-            recurrenceEnd: row.recurrenceEnd || '',
-            excludedDates: Array.isArray(row.excludedDates) ? row.excludedDates : (row.excludedDates ? row.excludedDates.split(',').map(s => s.trim()) : []),
+            recurrenceEnd: parseDateField(row.recurrenceEnd),
+            excludedDates: typeof row.excludedDates === 'string' ? row.excludedDates.split(',').map(s => s.trim()).filter(Boolean) : [],
             deleted: row.deleted === 'true' || row.deleted === true
         };
     }
@@ -1021,6 +1025,7 @@
 
 </body>
 </html>
+
 
 
 
