@@ -829,8 +829,8 @@
                     const width = 100 / info.totalCols;
                     const left = info.colIndex * width;
 
-                    const bgColor = memberColors[evt.[0]] || '#667eea';
-                    const borderColors = evt..slice(1).map(p => memberColors[p]).filter(Boolean);
+                    const bgColor = memberColors[evt.people[0]] || '#667eea';
+                    const borderColors = evt.people.slice(1).map(p => memberColors[p]).filter(Boolean);
                     const boxShadow = borderColors.map((color, i) => {
                         const offset = (i + 1) * 2;
                         return `0 0 0 ${offset}px ${color}`;
@@ -1074,6 +1074,7 @@
 
 </body>
 </html>
+
 
 
 
