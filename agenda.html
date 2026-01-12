@@ -792,7 +792,7 @@
         daysArray.forEach(({ dateStr }) => {
             const dayEvents = weekEvents.filter(evt =>
                 evt.date === dateStr &&
-                (currentView === 'geral' || evt.people.includes(currentView))
+                (currentView === 'geral' || evt..includes(currentView))
             );
             layoutsByDay[dateStr] = buildDayLayout(dayEvents);
         });
@@ -807,7 +807,7 @@
 
                 const cellEvents = weekEvents.filter(evt => {
                     if (evt.date !== dateStr) return false;
-                    if (currentView !== 'geral' && !evt.people.includes(currentView)) return false;
+                    if (currentView !== 'geral' && !evt..includes(currentView)) return false;
                     return parseInt(evt.startTime.split(':')[0]) === hour;
                 });
 
@@ -829,8 +829,8 @@
                     const width = 100 / info.totalCols;
                     const left = info.colIndex * width;
 
-                    const bgColor = memberColors[evt.people[0]] || '#667eea';
-                    const borderColors = evt.people.slice(1).map(p => memberColors[p]).filter(Boolean);
+                    const bgColor = memberColors[evt.[0]] || '#667eea';
+                    const borderColors = evt..slice(1).map(p => memberColors[p]).filter(Boolean);
                     const boxShadow = borderColors.map((color, i) => {
                         const offset = (i + 1) * 2;
                         return `0 0 0 ${offset}px ${color}`;
@@ -852,7 +852,7 @@
                             ${evt.isRecurring ? '<span style="position:absolute; top:2px; right:4px; font-size:12px;">🔁</span>' : ''}
                             <strong>${evt.title}</strong><br>
                             ${evt.startTime} - ${evt.endTime}<br>
-                            <small>${evt.people.join(', ')}</small>
+                            <small>${evt..join(', ')}</small>
                         </div>
                     `;
                 });
@@ -915,10 +915,10 @@
             date: row.date,
             startTime: row.startTime,
             endTime: row.endTime,
-            people: row.people ? JSON.parse(row.people) : [],
+            people: row.people ? row.people.split(',') : [],
             recurrence: row.recurrence || 'none',
             recurrenceEnd: row.recurrenceEnd || '',
-            excludedDates: row.excludedDates ? JSON.parse(row.excludedDates) : [],
+            excludedDates: row.excludedDates ? row.excludedDates.split(',') : [],
             deleted: row.deleted === 'true'
         };
     }
@@ -1074,5 +1074,6 @@
 
 </body>
 </html>
+
 
 
