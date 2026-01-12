@@ -922,10 +922,17 @@
             //teste com o carregamento no celular
             console.log("Carregando eventos da API...");
             console.log("URL usada:", API_URL + '?nocache=' + new Date().getTime());
-            const events = await response.json();
-            console.log("Eventos recebidos:", events);
-            //fim do teste
+            async function loadEvents() {
+        showLoading(true);
+
+        try {
+            const response = await fetch(API_URL + '?nocache=' + new Date().getTime());
+
+            console.log("Carregando eventos da API...");
+            console.log("URL usada:", API_URL + '?nocache=' + new Date().getTime());
+
             const data = await response.json();
+            console.log("Eventos recebidos:", data);
 
             events = data.map(deserializeEvent);
             renderCalendar();
@@ -994,11 +1001,5 @@
 
     loadEvents();
 </script>
-<script>
-  console.log("Script carregado!");
-</script>
 </body>
 </html>
-
-
-
