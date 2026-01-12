@@ -883,18 +883,43 @@
     }
 
     function deserializeEvent(row) {
+        // Função auxiliar para extrair HH:mm de qualquer formato
+        function parseTimeField(value) {
+            if (!value) return "";
+            
+            // Se já está no formato HH:mm
+            if (typeof value === 'string' && /^\d{2}:\d{2}$/.test(value)) {
+                return value;
+            }
+            
+            // Se contém 'T' (formato ISO do Sheets)
+            if (typeof value === 'string' && value.includes('T')) {
+                const timePart = value.split('T')[1];
+                return timePart ? timePart.substring(0, 5) : "";
+            }
+            
+            // Se é um objeto Date
+            if (value instanceof Date || Object.prototype.toString.call(value) === '[object Date]') {
+                const hours = value.getHours().toString().padStart(2, '0');
+                const minutes = value.getMinutes().toString().padStart(2, '0');
+                return `${hours}:${minutes}`;
+            }
+            
+            return "";
+        }
+    
         return {
             id: String(row.id),
             title: row.title || '',
             description: row.description || '',
-            startTime: row.startTime ? new Date(row.startTime).toISOString().substring(11,16) : "",
-            endTime: row.endTime ? new Date(row.endTime).toISOString().substring(11,16) : "",
-            date: row.date ? new Date(row.date).toISOString().substring(0,10) : "",
-            people: row.people ? row.people.split(',') : [],
+            startTime: parseTimeField(row.startTime),
+            endTime: parseTimeField(row.endTime),
+            date: row.date ? (typeof row.date === 'string' ? row.date.split('T')[0] : new Date(row.date).toISOString().substring(0,10)) : "",
+            people: Array.isArray(row.people) ? row.people : (row.people ? row.people.split(',').map(s => s.trim()) : []),
             recurrence: row.recurrence || 'none',
             recurrenceEnd: row.recurrenceEnd || '',
-            excludedDates: row.excludedDates ? row.excludedDates.split(',') : [],
-            deleted: row.deleted === 'true'
+            excludedDates: Array.isArray(row.excludedDates) ? row.excludedDates : (row.excludedDates ? row.excludedDates.split(',').map(s => s.trim()) : []),
+            deleted: row.deleted === 'true' || row.deleted === true
         };
     }
 
@@ -996,5 +1021,6 @@
 
 </body>
 </html>
+
 
 
