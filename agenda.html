@@ -887,9 +887,9 @@
             id: String(row.id),
             title: row.title || '',
             description: row.description || '',
-            date: row.date,
-            startTime: row.startTime,
-            endTime: row.endTime,
+            startTime: row.startTime ? new Date(row.startTime).toISOString().substring(11,16) : "",
+            endTime: row.endTime ? new Date(row.endTime).toISOString().substring(11,16) : "",
+            date: row.date ? new Date(row.date).toISOString().substring(0,10) : "",
             people: row.people ? row.people.split(',') : [],
             recurrence: row.recurrence || 'none',
             recurrenceEnd: row.recurrenceEnd || '',
@@ -996,4 +996,5 @@
 
 </body>
 </html>
+
 
