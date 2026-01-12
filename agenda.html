@@ -899,10 +899,10 @@
             date: evt.date,
             startTime: evt.startTime,
             endTime: evt.endTime,
-            people: JSON.stringify(evt.people || []),
+            people: evt.people.join(','),
             recurrence: evt.recurrence || 'none',
             recurrenceEnd: evt.recurrenceEnd || '',
-            excludedDates: JSON.stringify(evt.excludedDates || []),
+            excludedDates: evt.excludedDates.join(','),
             deleted: evt.deleted ? 'true' : ''
         };
     }
@@ -1074,3 +1074,4 @@
 
 </body>
 </html>
+
