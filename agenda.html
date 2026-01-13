@@ -1107,21 +1107,21 @@
         }
     }
     
-        async function loadEvents() {
+    async function loadEvents() {
         showLoading(true);
-
         try {
             console.log("Script carregado!");
             console.log("Carregando eventos da API...");
             console.log("URL usada:", API_URL + '?nocache=' + new Date().getTime());
-
             const response = await fetch(API_URL + '?nocache=' + new Date().getTime());
             const data = await response.json();
             console.log("Eventos recebidos:", data);
-
-            events = data.map(deserializeEvent);
+            
+            events = data
+                .map(deserializeEvent)
+                .filter(evt => !evt.deleted); // Filtra eventos deletados
+            
             renderCalendar();
-
         } catch (e) {
             console.error('Erro ao carregar eventos:', e);
             alert('Erro ao carregar eventos do servidor.');
@@ -1129,7 +1129,6 @@
             showLoading(false);
         }
     }
-
     document.getElementById('eventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -1188,6 +1187,7 @@
 
 </body>
 </html>
+
 
 
 
