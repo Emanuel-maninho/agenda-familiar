@@ -700,7 +700,9 @@
         const maxEnd = new Date(endDate);
         const finalEnd = end < maxEnd ? end : maxEnd;
 
-        const excludedDates = baseEvent.excludedDates || [];
+        const excludedDates = Array.isArray(baseEvent.excludedDates) 
+            ? baseEvent.excludedDates 
+            : (baseEvent.excludedDates ? baseEvent.excludedDates.split(',').map(s => s.trim()).filter(Boolean) : []);
 
         if (baseEvent.recurrence === 'weekdays') {
             let startDay = current.getDay();
@@ -1187,6 +1189,7 @@
 
 </body>
 </html>
+
 
 
 
