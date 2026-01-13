@@ -607,7 +607,7 @@
         document.getElementById('eventModal').classList.add('active');
     }
 
-    async function deleteEvent() {
+/*    async function deleteEvent() {
         if (!editingEventId) return;
 
         const evt = events.find(e => e.id === editingEventId);
@@ -640,7 +640,51 @@
         closeModal();
         renderCalendar();
     }
+*/
 
+    async function deleteEvent() {
+        if (!editingEventId) return;
+
+        const evt = events.find(e => e.id === editingEventId);
+        if (!evt) return;
+
+        // Verifica se é evento único ou recorrente
+        const isRecurrent = evt.recurrence && evt.recurrence !== 'none';
+
+        let choice;
+        
+        if (isRecurrent) {
+            choice = prompt(
+                "Como deseja excluir?\n\n" +
+                "1 - Excluir TODA a série\n" +
+                "2 - Excluir SOMENTE esta ocorrência\n" +
+                "3 - Cancelar"
+            );
+        } else {
+            choice = confirm("Confirma a exclusão deste evento?") ? "1" : "3";
+        }
+
+        if (choice === "1") {
+            evt.deleted = true;
+            await saveEventToServer(evt);
+            events = events.filter(e => e.id !== editingEventId);
+
+        } else if (choice === "2") {
+            evt.excludedDates = evt.excludedDates || [];
+            if (!evt.excludedDates.includes(editingEventDate)) {
+                evt.excludedDates.push(editingEventDate);
+            }
+            await saveEventToServer(evt);
+
+        } else {
+            closeModal();
+            return;
+        }
+
+        closeModal();
+        renderCalendar();
+    }
+    
     function timeToMinutes(time) {
         const [h, m] = time.split(':').map(Number);
         return h * 60 + m;
@@ -1189,3 +1233,4 @@
 
 </body>
 </html>
+
