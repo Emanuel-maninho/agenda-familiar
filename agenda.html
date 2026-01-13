@@ -494,21 +494,44 @@
         document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
     }
 
-    function getWeekStart(date) {
+/*    function getWeekStart(date) {
         const d = new Date(date);
         const day = d.getDay();
         const diff = d.getDate() - day;
         return new Date(d.setDate(diff));
     }
-
-    function formatDate(date) {
+*/
+    function getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day;
+        const weekStart = new Date(d.setDate(diff));
+        weekStart.setHours(0, 0, 0, 0);
+        return weekStart;
+    }
+    
+/*    function formatDate(date) {
         return date.toISOString().split('T')[0];
     }
-
-    function formatDateBR(date) {
-        return date.toLocaleDateString('pt-BR');
+*/
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
 
+/*    function formatDateBR(date) {
+        return date.toLocaleDateString('pt-BR');
+    }
+*/
+    function formatDateBR(date) {
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+    
     function changeWeek(direction) {
         const newDate = new Date(currentWeekStart);
         newDate.setDate(newDate.getDate() + (direction * 7));
@@ -648,7 +671,7 @@
         return layout;
     }
 
-    function generateRecurringEvents(baseEvent, startDate, endDate) {
+/*    function generateRecurringEvents(baseEvent, startDate, endDate) {
         const recurring = [];
 
         let current = new Date(baseEvent.date + 'T00:00:00');
@@ -705,8 +728,74 @@
 
         return recurring;
     }
+*/
 
-    function getEventsForWeek() {
+    function generateRecurringEvents(baseEvent, startDate, endDate) {
+        const recurring = [];
+    
+        // Cria datas sem conversão de timezone
+        const [sy, sm, sd] = baseEvent.date.split('-').map(Number);
+        let current = new Date(sy, sm - 1, sd);
+        
+        const [ey, em, ed] = (baseEvent.recurrenceEnd || endDate).split('-').map(Number);
+        const end = new Date(ey, em - 1, ed);
+    
+        const [maxY, maxM, maxD] = endDate.split('-').map(Number);
+        const maxEnd = new Date(maxY, maxM - 1, maxD);
+        
+        const finalEnd = end < maxEnd ? end : maxEnd;
+    
+        const excludedDates = baseEvent.excludedDates || [];
+    
+        if (baseEvent.recurrence === 'weekdays') {
+            let startDay = current.getDay();
+            while (startDay === 0 || startDay === 6) {
+                current.setDate(current.getDate() + 1);
+                startDay = current.getDay();
+            }
+        }
+    
+        const [startY, startM, startD] = startDate.split('-').map(Number);
+        const startDateObj = new Date(startY, startM - 1, startD);
+    
+        while (current <= finalEnd) {
+            const currentDateStr = formatDate(current);
+    
+            if (current >= startDateObj) {
+                const dayOfWeek = current.getDay();
+    
+                if (!excludedDates.includes(currentDateStr)) {
+                    if (baseEvent.recurrence === 'weekdays') {
+                        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+                            recurring.push({
+                                ...baseEvent,
+                                date: currentDateStr,
+                                isRecurring: true
+                            });
+                        }
+                    } else {
+                        recurring.push({
+                            ...baseEvent,
+                            date: currentDateStr,
+                            isRecurring: true
+                        });
+                    }
+                }
+            }
+    
+            switch (baseEvent.recurrence) {
+                case 'daily': current.setDate(current.getDate() + 1); break;
+                case 'weekdays': current.setDate(current.getDate() + 1); break;
+                case 'weekly': current.setDate(current.getDate() + 7); break;
+                case 'monthly': current.setMonth(current.getMonth() + 1); break;
+                default: return recurring;
+            }
+        }
+    
+        return recurring;
+    }
+    
+/*    function getEventsForWeek() {
         const weekEnd = new Date(currentWeekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
 
@@ -731,7 +820,44 @@
             return evtDate >= currentWeekStart && evtDate <= weekEnd;
         });
     }
+*/
 
+    function getEventsForWeek() {
+        const weekEnd = new Date(currentWeekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+    
+        let allEvents = events.filter(e => !e.deleted);
+    
+        events.forEach(evt => {
+            if (evt.recurrence && evt.recurrence !== 'none' && !evt.deleted) {
+                const recurring = generateRecurringEvents(
+                    evt,
+                    formatDate(currentWeekStart),
+                    formatDate(weekEnd)
+                );
+    
+                allEvents = allEvents.concat(
+                    recurring.filter(r => r.date !== evt.date)
+                );
+            }
+        });
+    
+        return allEvents.filter(evt => {
+            const [y, m, d] = evt.date.split('-').map(Number);
+            const evtDate = new Date(y, m - 1, d);
+            evtDate.setHours(0, 0, 0, 0);
+            
+            const weekStart = new Date(currentWeekStart);
+            weekStart.setHours(0, 0, 0, 0);
+            
+            const weekEndComp = new Date(weekEnd);
+            weekEndComp.setHours(23, 59, 59, 999);
+            
+            return evtDate >= weekStart && evtDate <= weekEndComp;
+        });
+    }
+    
     function renderCalendar() {
         const calendar = document.getElementById('calendar');
         const weekEvents = getEventsForWeek();
@@ -747,14 +873,24 @@
         const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const daysArray = [];
 
-        for (let i = 0; i < 7; i++) {
+/*        for (let i = 0; i < 7; i++) {
             const date = new Date(currentWeekStart);
             date.setDate(date.getDate() + i);
             const dateStr = formatDate(date);
             daysArray.push({ date, dateStr });
             html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
         }
+*/
 
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + i);
+            date.setHours(0, 0, 0, 0);
+            const dateStr = formatDate(date);
+            daysArray.push({ date, dateStr });
+            html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
+        }
+        
         html += '</tr></thead><tbody>';
 
         const layoutsByDay = {};
@@ -1030,6 +1166,7 @@
 
 </body>
 </html>
+
 
 
 
