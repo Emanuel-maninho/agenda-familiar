@@ -939,11 +939,16 @@
                 },
                 body: JSON.stringify(payload)
             });
+            
+            // Aguarda 2 segundos para o Google Sheets processar
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
         } catch (e) {
             alert('Erro ao salvar evento no servidor.');
             console.error(e);
         }
     }
+    
         async function loadEvents() {
         showLoading(true);
 
@@ -1025,6 +1030,7 @@
 
 </body>
 </html>
+
 
 
 
