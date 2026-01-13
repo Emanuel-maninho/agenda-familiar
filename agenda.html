@@ -810,137 +810,127 @@
         });
     }
     
-    function renderCalendar() {
-        const calendar = document.getElementById('calendar');
-        const weekEvents = getEventsForWeek();
-
-        const weekEnd = new Date(currentWeekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
-
-        document.getElementById('weekDisplay').textContent =
-            `${formatDateBR(currentWeekStart)} - ${formatDateBR(weekEnd)}`;
-
-        let html = '<thead><tr><th>Horário</th>';
-
-        const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-        const daysArray = [];
-
-        for (let i = 0; i < 7; i++) {
-            const date = new Date(currentWeekStart);
-            date.setDate(date.getDate() + i);
-            date.setHours(0, 0, 0, 0);
-            const dateStr = formatDate(date);
-            daysArray.push({ date, dateStr });
-            html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
-        }
-        
-        html += '</tr></thead><tbody>';
-
-        const layoutsByDay = {};
-        daysArray.forEach(({ dateStr }) => {
-            const dayEvents = weekEvents.filter(evt =>
-                evt.date === dateStr &&
-                (currentView === 'geral' || evt.people.includes(currentView))
-            );
-            layoutsByDay[dateStr] = buildDayLayout(dayEvents);
-        });
-
-        const renderedEvents = new Set();
-        
-        // Hora atual
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        const currentDateStr = formatDate(now);
-
-        // Mudança: criar linhas de meia hora (48 linhas ao invés de 24)
-        for (let halfHour = 0; halfHour < 48; halfHour++) {
-            const hour = Math.floor(halfHour / 2);
-            const isHalfHour = halfHour % 2 === 1;
-            
-            html += `<tr ${isHalfHour ? 'class="half-hour-row"' : ''}>`;
-            
-            // Célula de horário
-            if (isHalfHour) {
-                html += '<td class="time-cell"></td>';
-            } else {
-                html += `<td class="time-cell">${hour.toString().padStart(2, '0')}:00</td>`;
-            }
-
-            for (let day = 0; day < 7; day++) {
-                const { dateStr } = daysArray[day];
-
-                const cellEvents = weekEvents.filter(evt => {
-                    if (evt.date !== dateStr) return false;
-                    if (currentView !== 'geral' && !evt.people.includes(currentView)) return false;
-                    
-                    const [startH, startM] = evt.startTime.split(':').map(Number);
-                    const [endH, endM] = evt.endTime.split(':').map(Number);
-                    
-                    const startHalfHour = startH * 2 + (startM >= 30 ? 1 : 0);
-                    const endHalfHour = endH * 2 + (endM > 0 ? (endM > 30 ? 2 : 1) : 0);
-                    
-                    return halfHour >= startHalfHour && halfHour < endHalfHour;
-                });
-
-                html += '<td style="position: relative;">';
-                
-                // Linha de hora atual
-                if (dateStr === currentDateStr && !isHalfHour && hour === currentHour) {
-                    const minutePercent = (currentMinute / 60) * 100;
-                    html +=
-                
-		// Linha da hora atual (pontilhada)
-                    html += `
-                        <div class="current-time-line" style="top:${minutePercent}%"></div>
-                    `;
-                }
-
-                // Renderizar eventos dentro da célula
-                cellEvents.forEach(evt => {
-                    if (renderedEvents.has(evt.id + '_' + dateStr)) return;
-
-                    const layout = layoutsByDay[dateStr][evt.id];
-                    if (!layout) return;
-
-                    const [startH, startM] = evt.startTime.split(':').map(Number);
-                    const [endH, endM] = evt.endTime.split(':').map(Number);
-
-                    const startHalf = startH * 2 + (startM >= 30 ? 1 : 0);
-                    const endHalf = endH * 2 + (endM > 0 ? (endM > 30 ? 2 : 1) : 0);
-
-                    const top = ((startHalf - halfHour) * 50);
-                    const height = ((endHalf - startHalf) * 50);
-
-                    const width = 100 / layout.totalCols;
-                    const left = width * layout.colIndex;
-
-                    html += `
-                        <div class="event ${evt.isRecurring ? 'recurrent' : ''}"
-                             onclick="openEditEventModal('${evt.id}', '${dateStr}')"
-                             style="
-                                top:${top}px;
-                                height:${height}px;
-                                left:${left}%;
-                                width:${width}%;
-                                background:${memberColors[evt.people[0]]};
-                             ">
-                            ${evt.title}
-                        </div>
-                    `;
-
-                    renderedEvents.add(evt.id + '_' + dateStr);
-                });
-
-                html += '</td>';
-            }
-
-            html += '</tr>';
-        }
-
-        html += '</tbody>';
-        calendar.innerHTML = html;
-    }
+	function renderCalendar() {
+	    const calendar = document.getElementById('calendar');
+	    calendar.innerHTML = ''; // Evita duplicação da agenda
+	
+	    const weekEvents = getEventsForWeek();
+	
+	    const weekEnd = new Date(currentWeekStart);
+	    weekEnd.setDate(weekEnd.getDate() + 6);
+	
+	    document.getElementById('weekDisplay').textContent =
+	        `${formatDateBR(currentWeekStart)} - ${formatDateBR(weekEnd)}`;
+	
+	    let html = '<thead><tr><th>Horário</th>';
+	
+	    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+	    const daysArray = [];
+	
+	    for (let i = 0; i < 7; i++) {
+	        const date = new Date(currentWeekStart);
+	        date.setDate(date.getDate() + i);
+	        date.setHours(0, 0, 0, 0);
+	        const dateStr = formatDate(date);
+	        daysArray.push({ date, dateStr });
+	        html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
+	    }
+	
+	    html += '</tr></thead><tbody>';
+	
+	    const layoutsByDay = {};
+	    daysArray.forEach(({ dateStr }) => {
+	        const dayEvents = weekEvents.filter(evt =>
+	            evt.date === dateStr &&
+	            (currentView === 'geral' || evt.people.includes(currentView))
+	        );
+	        layoutsByDay[dateStr] = buildDayLayout(dayEvents);
+	    });
+	
+	    const renderedEvents = new Set();
+	
+	    const now = new Date();
+	    const currentHour = now.getHours();
+	    const currentMinute = now.getMinutes();
+	    const currentDateStr = formatDate(now);
+	
+	    for (let halfHour = 0; halfHour < 48; halfHour++) {
+	        const hour = Math.floor(halfHour / 2);
+	        const isHalfHour = halfHour % 2 === 1;
+	
+	        html += `<tr ${isHalfHour ? 'class="half-hour-row"' : ''}>`;
+	
+	        html += isHalfHour
+	            ? '<td class="time-cell"></td>'
+	            : `<td class="time-cell">${hour.toString().padStart(2, '0')}:00</td>`;
+	
+	        for (let day = 0; day < 7; day++) {
+	            const { dateStr } = daysArray[day];
+	
+	            html += '<td style="position: relative;">';
+	
+	            // Linha da hora atual
+	            if (dateStr === currentDateStr && !isHalfHour && hour === currentHour) {
+	                const minutePercent = (currentMinute / 60) * 100;
+	                html += `<div class="current-time-line" style="top:${minutePercent}%"></div>`;
+	            }
+	
+	            const cellEvents = weekEvents.filter(evt => {
+	                if (evt.date !== dateStr) return false;
+	                if (currentView !== 'geral' && !evt.people.includes(currentView)) return false;
+	
+	                const [startH, startM] = evt.startTime.split(':').map(Number);
+	                const [endH, endM] = evt.endTime.split(':').map(Number);
+	
+	                const startHalf = startH * 2 + (startM >= 30 ? 1 : 0);
+	                const endHalf = endH * 2 + (endM > 0 ? (endM > 30 ? 2 : 1) : 0);
+	
+	                return halfHour >= startHalf && halfHour < endHalf;
+	            });
+	
+	            cellEvents.forEach(evt => {
+	                const layout = layoutsByDay[dateStr][evt.id];
+	                if (!layout || renderedEvents.has(evt.id + '_' + dateStr)) return;
+	
+	                const [startH, startM] = evt.startTime.split(':').map(Number);
+	                const [endH, endM] = evt.endTime.split(':').map(Number);
+	
+	                const startHalf = startH * 2 + (startM >= 30 ? 1 : 0);
+	                const endHalf = endH * 2 + (endM > 0 ? (endM > 30 ? 2 : 1) : 0);
+	
+	                const top = ((startHalf - halfHour) * 40); // altura da célula
+	                const height = ((endHalf - startHalf) * 40);
+	
+	                const width = 100 / layout.totalCols;
+	                const left = width * layout.colIndex;
+	
+	                html += `
+	                    <div class="event ${evt.isRecurring ? 'recurrent' : ''}"
+	                         onclick="openEditEventModal('${evt.id}', '${dateStr}')"
+	                         style="
+	                            top:${top}px;
+	                            height:${height}px;
+	                            left:${left}%;
+	                            width:${width}%;
+	                            background:${memberColors[evt.people[0]]};
+	                            z-index:10;
+	                         ">
+	                        ${evt.title}
+	                    </div>
+	                `;
+	
+	                renderedEvents.add(evt.id + '_' + dateStr);
+	            });
+	
+	            html += '</td>';
+	        }
+	
+	        html += '</tr>';
+	    }
+	
+	    html += '</tbody>';
+	    calendar.innerHTML = html;
+	}
 
     async function saveEventToServer(eventData) {
         showLoading(true);
@@ -1011,3 +1001,4 @@
 
 </body>
 </html>
+
