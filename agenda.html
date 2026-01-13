@@ -1042,7 +1042,7 @@
         };
     }
 
-    function deserializeEvent(row) {
+/*    function deserializeEvent(row) {
         // Função para extrair HH:mm ignorando timezone
         function parseTimeField(value) {
             if (!value) return "";
@@ -1086,7 +1086,40 @@
             deleted: row.deleted === 'true' || row.deleted === true
         };
     }
+*/
 
+    function deserializeEvent(row) {
+        // Função auxiliar para processar campos de array
+        function parseArrayField(value) {
+            // Verifica se já é array
+            if (Array.isArray(value)) {
+                return value.map(item => item.trim()).filter(item => item !== '');
+            }
+            // Verifica se é string e faz o split
+            if (typeof value === 'string' && value.trim() !== '') {
+                return value.split(',')
+                    .map(item => item.trim())  // Remove espaços em branco
+                    .filter(item => item !== '');  // Filtra valores vazios
+            }
+            // Retorna array vazio se for null, undefined ou string vazia
+            return [];
+        }
+        
+        return {
+            id: row.id,
+            titulo: row.titulo || '',
+            data: row.data || '',
+            horaInicio: row.horaInicio || row.hora_inicio || '',
+            horaFim: row.horaFim || row.hora_fim || '',
+            cor: row.cor || '#4c6ef5',
+            membros: parseArrayField(row.membros),
+            recorrente: row.recorrente || false,
+            diasRecorrencia: parseArrayField(row.diasRecorrencia || row.dias_recorrencia),
+            local: row.local || '',
+            notas: row.notas || ''
+        };
+    }
+    
     async function saveEventToServer(evt) {
         const payload = serializeEvent(evt);
 
@@ -1189,6 +1222,7 @@
 
 </body>
 </html>
+
 
 
 
