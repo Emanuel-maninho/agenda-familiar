@@ -649,7 +649,8 @@
         if (!evt) return;
 
         // Verifica se é evento único ou recorrente
-        const isRecurrent = evt.recurrence && evt.recurrence !== 'none';
+        const recurrence = evt.recurrence || 'none';
+        const isRecurrent = recurrence !== 'none' && recurrence !== '';
 
         let choice;
         
@@ -1233,4 +1234,5 @@
 
 </body>
 </html>
+
 
