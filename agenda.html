@@ -1182,11 +1182,12 @@
     
                     // --- GERAÇÃO DOS BOTÕES DE WHATSAPP ---
                     const zapsHtml = evt.people.map(p => {
-                        // Escapamos as aspas para não quebrar o HTML
                         const tituloEscapado = evt.title.replace(/'/g, "\\'");
-                        const descEscapada = (evt.description || "").replace(/'/g, "\\'").replace(/\n/g, " ");
+                        // Limpa a descrição de aspas e garante que quebras de linha do HTML sejam tratadas
+                        const descEscapada = (evt.description || "").replace(/'/g, "\\'").replace(/\r?\n/g, " ");
+                        const horario = `${evt.startTime} às ${evt.endTime}`;
                     
-                        return `<span onclick="event.stopPropagation(); enviarZap('${tituloEscapado}', '${p.trim()}', '${descEscapada}')" 
+                        return `<span onclick="event.stopPropagation(); enviarZap('${tituloEscapado}', '${p.trim()}', '${descEscapada}', '${horario}')" 
                                style="cursor:pointer; background:white; border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; margin-left:2px; border:1px solid #25D366; font-size:10px;" 
                                title="Zap para ${p}">🟢</span>`;
                     }).join('');
@@ -1404,21 +1405,24 @@
     });
 
     loadEvents();
-    function enviarZap(titulo, pessoa, descricao) {
+    function enviarZap(titulo, pessoa, descricao, horario) {
         const telefone = listaContatos[pessoa];
         if (!telefone) {
             alert("Número de telefone não encontrado para " + pessoa);
             return;
         }
     
-        // Monta a mensagem com descrição se ela existir
-        let texto = `*Lembrete de Agenda Familiar*\n\n📌 *Evento:* ${titulo}`;
+        // Montando a mensagem com quebras de linha (* para Negrito no Zap)
+        let texto = `*Lembrete de Agenda Familiar* 🏠\n\n`;
+        texto += `📌 *Evento:* ${titulo}\n`;
+        texto += `⏰ *Horário:* ${horario}\n`;
         
         if (descricao && descricao.trim() !== "" && descricao !== "undefined") {
-            texto += `\n📝 *Descrição:* ${descricao}`;
+            // Adiciona a descrição com uma quebra de linha extra para destacar
+            texto += `\n📝 *Descrição:*\n${descricao}`;
         }
         
-        texto += `\n⏰ Já está chegando a hora!`;
+        texto += `\n\n_Mensagem automática da nossa agenda._`;
     
         const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${encodeURIComponent(texto)}`;
         window.open(url, '_blank');
@@ -1428,6 +1432,7 @@
 
 </body>
 </html>
+
 
 
 
