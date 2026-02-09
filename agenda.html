@@ -1412,17 +1412,21 @@
             return;
         }
     
-        // Montando a mensagem com quebras de linha (* para Negrito no Zap)
+        // URL da sua agenda no GitHub
+        const linkAgenda = "https://emanuel-maninho.github.io/agenda-familiar/agenda.html";
+    
+        // Montando a mensagem
         let texto = `*Lembrete de Agenda Familiar* 🏠\n\n`;
         texto += `📌 *Evento:* ${titulo}\n`;
         texto += `⏰ *Horário:* ${horario}\n`;
         
         if (descricao && descricao.trim() !== "" && descricao !== "undefined") {
-            // Adiciona a descrição com uma quebra de linha extra para destacar
-            texto += `\n📝 *Descrição:*\n${descricao}`;
+            texto += `\n📝 *Descrição:*\n${descricao}\n`;
         }
         
-        texto += `\n\n_Mensagem automática da nossa agenda._`;
+        // Rodapé com o link da agenda
+        texto += `\n🔗 *Acesse a agenda completa:* \n${linkAgenda}`;
+        texto += `\n\n_Mensagem enviada via Sistema Familiar_`;
     
         const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${encodeURIComponent(texto)}`;
         window.open(url, '_blank');
@@ -1432,6 +1436,7 @@
 
 </body>
 </html>
+
 
 
 
