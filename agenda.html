@@ -503,6 +503,14 @@
     };
 
     let events = [];
+    const listaContatos = {
+        "Emanuel": "5527981797670",
+        "Sue Ellen": "5527981127917",
+        "Emanuel Jr": "5527988615270",
+        "Maria Eduarda": "5527992640850",
+        "André": "5527981127917"
+        // Adicione os outros membros conforme sua planilha
+    };
     let currentView = 'geral';
     let currentWeekStart = getWeekStart(new Date());
     let editingEventId = null;
@@ -699,7 +707,7 @@
         return s1 < e2 && s2 < e1;
     }
 
-    function buildDayLayout(dayEvents) {
+/*    function buildDayLayout(dayEvents) {
         const layout = {};
         if (dayEvents.length === 0) return layout;
 
@@ -733,7 +741,35 @@
 
         return layout;
     }
+*/
 
+    function buildDayLayout(dayEvents) {
+        if (dayEvents.length === 0) return '';
+    
+        // Ordenar por horário de início
+        dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    
+        return dayEvents.map(evt => {
+            // Criar a lista de ícones de Zap para as pessoas do evento
+            const zaps = evt.people.map(p => 
+                `<span onclick="event.stopPropagation(); enviarZap('${evt.title}', '${p}')" 
+                       style="cursor:pointer; margin-left:4px;" title="Enviar Zap para ${p}">🟢</span>`
+            ).join('');
+    
+            return `
+                <div class="event-item" onclick="openEditEventModal('${evt.id}', '${evt.date}')" 
+                     style="display:flex; justify-content:space-between; align-items:center; padding:2px 5px; margin-bottom:2px; font-size:11px;">
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${evt.startTime} ${evt.title}
+                    </span>
+                    <div style="display:flex; flex-shrink:0;">
+                        ${zaps}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
 /*    function generateRecurringEvents(baseEvent, startDate, endDate) {
         const recurring = [];
 
@@ -1227,6 +1263,20 @@
         await saveEventToServer(evt);
         closeModal();
         renderCalendar();
+
+        function enviarZap(titulo, pessoa) {
+            const telefone = listaContatos[pessoa.trim()];
+            if (!telefone) {
+                alert("Número de telefone não encontrado para " + pessoa);
+                return;
+            }
+            
+            const mensagem = `*Lembrete de Agenda:*%0A📌 *${titulo}*`;
+            const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${mensagem}`;
+            
+            window.open(url, '_blank');
+        }
+        
     });
 
     loadEvents();
@@ -1234,5 +1284,6 @@
 
 </body>
 </html>
+
 
 
