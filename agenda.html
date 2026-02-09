@@ -707,7 +707,7 @@
         return s1 < e2 && s2 < e1;
     }
 
-/*    function buildDayLayout(dayEvents) {
+    function buildDayLayout(dayEvents) {
         const layout = {};
         if (dayEvents.length === 0) return layout;
 
@@ -741,58 +741,40 @@
 
         return layout;
     }
-*/
 
-    function buildDayLayout(dayEvents) {
-        if (dayEvents.length === 0) return '';
-    
-        // 1. Ordenar por horário de início
-        dayEvents.sort((a, b) => a.startTime.localeCompare(b.startTime));
-    
+/*    function buildDayLayout(dayEvents) {
+        const layout = {};
+        if (dayEvents.length === 0) return layout;
+
+        const sorted = [...dayEvents].sort(
+            (a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
+        );
+
         const columns = [];
-        dayEvents.forEach(evt => {
+
+        sorted.forEach(evt => {
             let placed = false;
             for (let i = 0; i < columns.length; i++) {
-                const lastEventInCol = columns[i][columns[i].length - 1];
-                if (evt.startTime >= lastEventInCol.endTime) {
-                    columns[i].push(evt);
-                    evt.col = i;
+                if (!eventsOverlap(columns[i].event, evt)) {
+                    columns[i] = { event: evt, end: timeToMinutes(evt.endTime) };
+                    layout[evt.id] = { colIndex: i };
                     placed = true;
                     break;
                 }
             }
             if (!placed) {
-                evt.col = columns.length;
-                columns.push([evt]);
+                const newIndex = columns.length;
+                columns.push({ event: evt, end: timeToMinutes(evt.endTime) });
+                layout[evt.id] = { colIndex: newIndex };
             }
         });
-    
-        const colWidth = 100 / columns.length;
-    
-        return dayEvents.map(evt => {
-            // Criar as bolinhas de Zap para cada pessoa do evento
-            const zaps = evt.people.map(p => {
-                const nomeLimpo = p.trim();
-                return `<span onclick="event.stopPropagation(); enviarZap('${evt.title.replace(/'/g, "\\'")}', '${nomeLimpo}')" 
-                       style="cursor:pointer; background:#25D366; border-radius:50%; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; font-size:10px; margin-left:3px; border:1px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" 
-                       title="Zap para ${nomeLimpo}">🟢</span>`;
-            }).join('');
-    
-            return `
-                <div class="event-item" 
-                     onclick="openEditEventModal('${evt.id}', '${evt.date}')"
-                     style="left:${evt.col * colWidth}%; width:${colWidth}%; display:flex; flex-direction:column; justify-content:space-between; padding: 4px;">
-                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 11px;">
-                        <strong>${evt.startTime}</strong> ${evt.title}
-                    </div>
-                    <div style="display:flex; justify-content: flex-end; margin-top: 2px;">
-                        ${zaps}
-                    </div>
-                </div>
-            `;
-        }).join('');
+
+        const totalCols = columns.length;
+        Object.keys(layout).forEach(id => layout[id].totalCols = totalCols);
+
+        return layout;
     }
-    
+*/    
 /*    function generateRecurringEvents(baseEvent, startDate, endDate) {
         const recurring = [];
 
@@ -982,7 +964,7 @@
         });
     }
     
-    function renderCalendar() {
+/*    function renderCalendar() {
         const calendar = document.getElementById('calendar');
         const weekEvents = getEventsForWeek();
 
@@ -996,15 +978,6 @@
 
         const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
         const daysArray = [];
-
-/*        for (let i = 0; i < 7; i++) {
-            const date = new Date(currentWeekStart);
-            date.setDate(date.getDate() + i);
-            const dateStr = formatDate(date);
-            daysArray.push({ date, dateStr });
-            html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
-        }
-*/
 
         for (let i = 0; i < 7; i++) {
             const date = new Date(currentWeekStart);
@@ -1123,7 +1096,144 @@
             </div>
         `;
     }
+*/
 
+    function renderCalendar() {
+        const calendar = document.getElementById('calendar');
+        const weekEvents = getEventsForWeek();
+    
+        const weekEnd = new Date(currentWeekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+    
+        document.getElementById('weekDisplay').textContent =
+            `${formatDateBR(currentWeekStart)} - ${formatDateBR(weekEnd)}`;
+    
+        let html = '<thead><tr><th>Horário</th>';
+    
+        const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const daysArray = [];
+    
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentWeekStart);
+            date.setDate(date.getDate() + i);
+            date.setHours(0, 0, 0, 0);
+            const dateStr = formatDate(date);
+            daysArray.push({ date, dateStr });
+            html += `<th>${dayNames[date.getDay()]}<br>${formatDateBR(date)}</th>`;
+        }
+        
+        html += '</tr></thead><tbody>';
+    
+        const layoutsByDay = {};
+        daysArray.forEach(({ dateStr }) => {
+            const dayEvents = weekEvents.filter(evt =>
+                evt.date === dateStr &&
+                (currentView === 'geral' || evt.people.includes(currentView))
+            );
+            layoutsByDay[dateStr] = buildDayLayout(dayEvents);
+        });
+    
+        const renderedEvents = new Set();
+    
+        for (let hour = 0; hour < 24; hour++) {
+            html += `<tr><td class="time-cell">${hour.toString().padStart(2, '0')}:00</td>`;
+    
+            for (let day = 0; day < 7; day++) {
+                const { dateStr } = daysArray[day];
+    
+                const cellEvents = weekEvents.filter(evt => {
+                    if (evt.date !== dateStr) return false;
+                    if (currentView !== 'geral' && !evt.people.includes(currentView)) return false;
+                    const evtHour = parseInt(evt.startTime.split(':')[0]);
+                    return evtHour === hour || (evtHour < hour && parseInt(evt.endTime.split(':')[0]) > hour);
+                });
+    
+                html += '<td>';
+    
+                const layoutForDay = layoutsByDay[dateStr] || {};
+    
+                cellEvents.forEach(evt => {
+                    const key = `${evt.id}-${dateStr}`;
+                    if (renderedEvents.has(key)) return;
+                    renderedEvents.add(key);
+    
+                    const [startH, startM] = evt.startTime.split(':').map(Number);
+                    const [endH, endM] = evt.endTime.split(':').map(Number);
+                    const duration = (endH + endM / 60) - (startH + startM / 60);
+                    
+                    const baseHeight = duration * 60 * 0.8;
+                    const minHeight = 60; 
+                    const height = Math.max(baseHeight, minHeight);
+    
+                    const info = layoutForDay[evt.id] || { colIndex: 0, totalCols: 1 };
+                    const width = 100 / info.totalCols;
+                    const left = info.colIndex * width;
+    
+                    const bgColor = memberColors[evt.people[0]] || '#4c6ef5';
+                    const borderColors = evt.people.slice(1)
+                        .map(p => memberColors[p])
+                        .filter(Boolean);
+    
+                    const boxShadow = borderColors
+                        .map((color, i) => `0 0 0 ${(i + 1) * 2}px ${color}`)
+                        .join(', ');
+    
+                    const classes = `event ${evt.isRecurring ? 'recurrent' : ''}`;
+    
+                    // --- GERAÇÃO DOS BOTÕES DE WHATSAPP ---
+                    const zapsHtml = evt.people.map(p => {
+                        return `<span onclick="event.stopPropagation(); enviarZap('${evt.title.replace(/'/g, "\\'")}', '${p.trim()}')" 
+                               style="cursor:pointer; background:white; border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; margin-left:2px; border:1px solid #25D366; font-size:10px;" 
+                               title="Zap para ${p}">🟢</span>`;
+                    }).join('');
+    
+                    html += `
+                        <div class="${classes}"
+                             onclick="openEditEventModal('${evt.id}', '${dateStr}')"
+                             style="
+                                height:${height}px;
+                                width:${width}%;
+                                left:${left}%;
+                                top:0;
+                                background:${bgColor};
+                                box-shadow:${boxShadow || 'none'};
+                                display: flex;
+                                flex-direction: column;
+                                justify-content: space-between;
+                             ">
+                            <div>
+                                ${evt.isRecurring ? '<span style="float:right;">🔁</span>' : ''}
+                                <strong>${evt.title}</strong><br>
+                                <small>${evt.startTime} - ${evt.endTime}</small>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end; padding-bottom:2px;">
+                                ${zapsHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+    
+                html += '</td>';
+            }
+    
+            html += '</tr>';
+        }
+    
+        html += '</tbody>';
+        calendar.innerHTML = html;
+    
+        // Atualiza a legenda
+        const legend = document.querySelector('.legend');
+        legend.innerHTML = `
+            ${Object.entries(memberColors).map(([name, color]) => `
+                <div class="legend-item">
+                    <div class="legend-color" style="background: ${color};"></div>
+                    <span>${name}</span>
+                </div>
+            `).join('')}
+        `;
+    }
+    
     function toggleRecurrenceEnd() {
         const recurrence = document.getElementById('eventRecurrence').value;
         document.getElementById('recurrenceEndGroup').style.display =
@@ -1306,6 +1416,7 @@
 
 </body>
 </html>
+
 
 
 
