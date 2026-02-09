@@ -1182,7 +1182,11 @@
     
                     // --- GERAÇÃO DOS BOTÕES DE WHATSAPP ---
                     const zapsHtml = evt.people.map(p => {
-                        return `<span onclick="event.stopPropagation(); enviarZap('${evt.title.replace(/'/g, "\\'")}', '${p.trim()}')" 
+                        // Escapamos as aspas para não quebrar o HTML
+                        const tituloEscapado = evt.title.replace(/'/g, "\\'");
+                        const descEscapada = (evt.description || "").replace(/'/g, "\\'").replace(/\n/g, " ");
+                    
+                        return `<span onclick="event.stopPropagation(); enviarZap('${tituloEscapado}', '${p.trim()}', '${descEscapada}')" 
                                style="cursor:pointer; background:white; border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; margin-left:2px; border:1px solid #25D366; font-size:10px;" 
                                title="Zap para ${p}">🟢</span>`;
                     }).join('');
@@ -1400,22 +1404,31 @@
     });
 
     loadEvents();
-    function enviarZap(titulo, pessoa) {
-        const telefone = listaContatos[pessoa.trim()];
+    function enviarZap(titulo, pessoa, descricao) {
+        const telefone = listaContatos[pessoa];
         if (!telefone) {
             alert("Número de telefone não encontrado para " + pessoa);
             return;
         }
+    
+        // Monta a mensagem com descrição se ela existir
+        let texto = `*Lembrete de Agenda Familiar*\n\n📌 *Evento:* ${titulo}`;
         
-        const mensagem = `*Lembrete de Agenda:*%0A📌 *${titulo}*`;
-        const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${mensagem}`;
+        if (descricao && descricao.trim() !== "" && descricao !== "undefined") {
+            texto += `\n📝 *Descrição:* ${descricao}`;
+        }
         
+        texto += `\n⏰ Já está chegando a hora!`;
+    
+        const url = `https://api.whatsapp.com/send?phone=${telefone}&text=${encodeURIComponent(texto)}`;
         window.open(url, '_blank');
     }
+    
 </script>
 
 </body>
 </html>
+
 
 
 
